@@ -1,0 +1,10 @@
+*
+!*/
+!*.*
+.swo
+.swp
+.swn
+build/*
+a.out
+.idea
+
