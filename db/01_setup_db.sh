@@ -9,7 +9,7 @@ printf "Setup with params username=%s postgres_db=%s\n" $username $postgres_db
 psql --username "$username" --dbname "$postgres_db" <<-EOSQL
 CREATE DATABASE lesnotes;
 
-CREATE USER editor WITH ENCRYPTED PASSWORD 'md596eb91861ccb25e5e5c57d45de28e40a';
+CREATE USER editor WITH ENCRYPTED PASSWORD 'md5e1cd61afab63c461ab483e94c917a39f';
 
 GRANT CONNECT ON DATABASE lesnotes TO editor;
 EOSQL
