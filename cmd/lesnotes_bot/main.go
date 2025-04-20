@@ -8,10 +8,12 @@ import (
 
 	"golang.org/x/sync/errgroup"
 	"github.com/jackc/pgx/v5/pgxpool"
+	botApi "github.com/go-telegram/bot"
 
 	"github.com/bd878/lesnotes_bot/internal/logger"
 	"github.com/bd878/lesnotes_bot/internal/waiter"
 	"github.com/bd878/lesnotes_bot/internal/config"
+	"github.com/bd878/lesnotes_bot/internal/bot"
 )
 
 var help bool
@@ -50,6 +52,7 @@ type app struct {
 	waiter waiter.Waiter
 	log *logger.Logger
 	pool *pgxpool.Pool
+	bot *bot.Bot
 }
 
 func run() error {
@@ -57,11 +60,12 @@ func run() error {
 
 	a.cfg = config.LoadConfig(os.Args[1])
 	a.log = logger.NewLog()
+	a.bot = bot.New(os.Getenv("TELEGRAM_LESNOTES_BOT_TOKEN"), os.Getenv("TELEGRAM_LESNOTES_BOT_WEBHOOK_SECRET_TOKEN"), a.cfg.WebhookURL + a.cfg.WebhookPath)
 
 	a.waiter = waiter.New()
 	a.waiter.Add(
 		a.waitForPool,
-		a.waitForWeb,
+		a.waitForBot,
 	)
 
 	return a.waiter.Wait()
@@ -89,6 +93,25 @@ func (a *app) waitForPool(ctx context.Context) error {
 	return group.Wait()
 }
 
-func (a *app) waitForWeb(ctx context.Context) error {
-	return nil
+func (a *app) waitForBot(ctx context.Context) error {
+	group, gCtx := errgroup.WithContext(ctx)
+
+	group.Go(func() error {
+		a.log.Infoln("start webhook")
+		defer a.log.Infoln("webhook shutdown")
+		a.bot.StartWebhook(ctx)
+		return nil
+	})
+
+	group.Go(func() (err error) {
+		<-gCtx.Done()
+		a.log.Infoln("webhook is about to be deleted")
+		_, err = a.bot.DeleteWebhook(context.Background(), &botApi.DeleteWebhookParams{
+			DropPendingUpdates: true,
+		})
+		a.log.Infoln("webhook deleted")
+		return err
+	})
+
+	return group.Wait()
 }

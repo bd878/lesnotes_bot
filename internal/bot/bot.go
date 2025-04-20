@@ -20,7 +20,7 @@ func must(token string, opts ...bot.Option) *bot.Bot {
 	return b
 }
 
-func NewBot(token, webhookToken, webhookURL string, opts ...bot.Option) *Bot {
+func New(token, webhookToken, webhookURL string, opts ...bot.Option) *Bot {
 	opts = append(opts, bot.WithDefaultHandler(defaultHandler))
 	b := &Bot{must(token, opts...)}
 
