@@ -14,6 +14,8 @@ import (
 	"github.com/bd878/lesnotes_bot/internal/waiter"
 	"github.com/bd878/lesnotes_bot/internal/config"
 	"github.com/bd878/lesnotes_bot/internal/bot"
+	"github.com/bd878/lesnotes_bot/internal/system"
+	"github.com/bd878/lesnotes_bot/chats"
 )
 
 var help bool
@@ -53,10 +55,37 @@ type app struct {
 	log *logger.Logger
 	pool *pgxpool.Pool
 	bot *bot.Bot
+	modules []system.Module
 }
 
+func (a *app) Pool() *pgxpool.Pool {
+	return a.pool
+}
+
+func (a *app) Log() *logger.Logger {
+	return a.log
+}
+
+func (a *app) Bot() *bot.Bot {
+	return a.bot
+}
+
+func (a *app) Waiter() waiter.Waiter {
+	return a.waiter
+}
+
+func (a *app) Config() config.Config {
+	return a.cfg
+}
+
+func (a *app) Modules() []system.Module {
+	return a.modules
+}
+
+var _ system.Monolith = (*app)(nil)
+
 func run() error {
-	a := app{}
+	a := &app{}
 
 	a.cfg = config.LoadConfig(os.Args[1])
 	a.log = logger.NewLog()
@@ -67,7 +96,18 @@ func run() error {
 		botApi.WithDebug(),
 	)
 
+	a.modules = []system.Module{
+		&chats.Module{},
+	}
+
 	a.waiter = waiter.New(waiter.CatchSignals())
+
+	for _, module := range a.modules {
+		if err := module.Startup(a.Waiter().Context(), a); err != nil {
+			return err
+		}
+	}
+
 	a.waiter.Add(
 		a.waitForPool,
 		a.waitForBot,
