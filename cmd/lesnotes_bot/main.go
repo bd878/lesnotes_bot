@@ -67,7 +67,7 @@ func run() error {
 		botApi.WithDebug(),
 	)
 
-	a.waiter = waiter.New()
+	a.waiter = waiter.New(waiter.CatchSignals())
 	a.waiter.Add(
 		a.waitForPool,
 		a.waitForBot,
