@@ -4,6 +4,7 @@ import (
 	"flag"
 	"os"
 	"fmt"
+	"net/http"
 	"context"
 
 	"golang.org/x/sync/errgroup"
@@ -55,6 +56,7 @@ type app struct {
 	log *logger.Logger
 	pool *pgxpool.Pool
 	bot *bot.Bot
+	server *http.Server
 	modules []system.Module
 }
 
@@ -80,6 +82,10 @@ func (a *app) Config() config.Config {
 
 func (a *app) Modules() []system.Module {
 	return a.modules
+}
+
+func (a *app) Server() *http.Server {
+	return a.server
 }
 
 var _ system.Monolith = (*app)(nil)
@@ -108,9 +114,17 @@ func run() error {
 		}
 	}
 
+	a.server = &http.Server{
+		Addr: a.cfg.Addr,
+	}
+	mux := http.NewServeMux()
+	mux.HandleFunc(a.cfg.WebhookPath, a.Bot().WebhookHandler())
+	a.server.Handler = mux
+
 	a.waiter.Add(
 		a.waitForPool,
 		a.waitForBot,
+		a.waitForWeb,
 	)
 
 	return a.waiter.Wait()
@@ -155,6 +169,30 @@ func (a *app) waitForBot(ctx context.Context) error {
 		})
 		a.log.Infoln("webhook deleted")
 		return err
+	})
+
+	return group.Wait()
+}
+
+func (a *app) waitForWeb(ctx context.Context) error {
+	group, gCtx := errgroup.WithContext(ctx)
+
+	group.Go(func() error {
+		a.log.Infow("start web server", "addr", a.cfg.Addr)
+		err := a.server.ListenAndServe()
+		if err != nil && err != http.ErrServerClosed {
+			a.log.Errorw("web server exited with error", "error", err)
+		}
+		return err
+	})
+
+	group.Go(func() (err error) {
+		<-gCtx.Done()
+		a.log.Infoln("web server is about to be shutdown")
+		if err := a.Server().Shutdown(context.Background()); err != nil {
+			a.log.Errorln("failed to stop web server")
+		}
+		return
 	})
 
 	return group.Wait()
