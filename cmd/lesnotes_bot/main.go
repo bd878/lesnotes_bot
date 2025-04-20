@@ -60,7 +60,12 @@ func run() error {
 
 	a.cfg = config.LoadConfig(os.Args[1])
 	a.log = logger.NewLog()
-	a.bot = bot.New(os.Getenv("TELEGRAM_LESNOTES_BOT_TOKEN"), os.Getenv("TELEGRAM_LESNOTES_BOT_WEBHOOK_SECRET_TOKEN"), a.cfg.WebhookURL + a.cfg.WebhookPath)
+	a.bot = bot.New(
+		os.Getenv("TELEGRAM_LESNOTES_BOT_TOKEN"),
+		os.Getenv("TELEGRAM_LESNOTES_BOT_WEBHOOK_SECRET_TOKEN"),
+		a.cfg.WebhookURL + a.cfg.WebhookPath,
+		botApi.WithDebug(),
+	)
 
 	a.waiter = waiter.New()
 	a.waiter.Add(
@@ -75,8 +80,7 @@ func (a *app) waitForPool(ctx context.Context) error {
 	group, gCtx := errgroup.WithContext(ctx)
 
 	group.Go(func() (err error) {
-		a.log.Infoln("start pgpool")
-		defer a.log.Infoln("pgpool shutdown")
+		a.log.Infow("start pgpool", "conn", a.cfg.PGConn)
 		if a.pool, err = pgxpool.New(context.Background(), a.cfg.PGConn); err != nil {
 			a.log.Errorln("failed to create pgpool, exit")
 		}
@@ -97,7 +101,7 @@ func (a *app) waitForBot(ctx context.Context) error {
 	group, gCtx := errgroup.WithContext(ctx)
 
 	group.Go(func() error {
-		a.log.Infoln("start webhook")
+		a.log.Infow("start webhook", "url", a.cfg.WebhookURL + a.cfg.WebhookPath)
 		defer a.log.Infoln("webhook shutdown")
 		a.bot.StartWebhook(ctx)
 		return nil
