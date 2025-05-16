@@ -5,7 +5,7 @@ import (
 	"strings"
 	"reflect"
 	"encoding/json"
-	"github.com/bd878/merchant_bot/internal/logger"
+	"github.com/bd878/lesnotes_bot/internal/logger"
 )
 
 type translations struct {

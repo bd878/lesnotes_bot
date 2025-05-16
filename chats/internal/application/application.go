@@ -12,7 +12,7 @@ import (
 
 type (
 	App interface {
-		Start(ctx context.Context, b *botApi.Bot, update *models.Update)
+		Start(ctx context.Context, b *botApi.Bot, update *models.Update) error
 	}
 
 	Application struct {
@@ -30,12 +30,23 @@ func New(chats domain.ChatsRepository, logger *logger.Logger) *Application {
 	}
 }
 
-func (a *Application) Start(ctx context.Context, b *botApi.Bot, update *models.Update) {
-	_, err := b.SendMessage(ctx, &botApi.SendMessageParams{
+func (a *Application) Start(ctx context.Context, b *botApi.Bot, update *models.Update) error {
+	chat, err := domain.CreateChat(&update.Message.Chat)
+	if err != nil {
+		return err
+	}
+
+	err = a.chats.Save(ctx, chat)
+	if err != nil {
+		return err
+	}
+
+	_, err = b.SendMessage(ctx, &botApi.SendMessageParams{
 		ChatID: update.Message.Chat.ID,
-		Text: "pong",
+		Text: "created",
 	})
 	if err != nil {
-		a.logger.Errorw("failed to send start message", "error", err)
+		return err
 	}
+	return nil
 }

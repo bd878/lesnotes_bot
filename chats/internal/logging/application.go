@@ -10,12 +10,18 @@ import (
 	"github.com/bd878/lesnotes_bot/chats/internal/application"
 )
 
-type Application struct {
-	application.App
-	logger *logger.Logger
-}
+type (
+	App interface {
+		Start(ctx context.Context, b *botApi.Bot, update *models.Update)
+	}
 
-var _ application.App = (*Application)(nil)
+	Application struct {
+		application.App
+		logger *logger.Logger
+	}
+)
+
+var _ App = (*Application)(nil)
 
 func LogApplicationAccess(application application.App, logger *logger.Logger) Application {
 	return Application{
@@ -25,7 +31,8 @@ func LogApplicationAccess(application application.App, logger *logger.Logger) Ap
 }
 
 func (a Application) Start(ctx context.Context, b *botApi.Bot, update *models.Update) {
+	var err error
 	a.logger.Infoln("---> Start")
-	defer func() { a.logger.Infoln("<-- Start") }()
-	a.App.Start(ctx, b, update)
+	defer func() { a.logger.Infof("<-- Start: %s\n", err.Error()) }()
+	err = a.App.Start(ctx, b, update)
 }
