@@ -6,4 +6,5 @@ type Config struct {
 	WebhookURL       string     `json:"webhook_url"`
 	Addr             string     `json:"addr"`
 	RootDir          string     `json:"root_dir"`
+	MessagesURL      string     `json:"messages_url"`
 }

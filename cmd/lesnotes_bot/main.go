@@ -90,7 +90,7 @@ func (a *app) Server() *http.Server {
 
 var _ system.Monolith = (*app)(nil)
 
-func run() error {
+func run() (err error) {
 	a := &app{}
 
 	a.cfg = config.LoadConfig(os.Args[1])
@@ -101,6 +101,10 @@ func run() error {
 		a.cfg.WebhookURL + a.cfg.WebhookPath,
 		botApi.WithDebug(),
 	)
+	a.pool, err = pgxpool.New(context.Background(), a.cfg.PGConn)
+	if err != nil {
+		return err
+	}
 
 	a.modules = []system.Module{
 		&chats.Module{},
@@ -109,7 +113,7 @@ func run() error {
 	a.waiter = waiter.New(waiter.CatchSignals())
 
 	for _, module := range a.modules {
-		if err := module.Startup(a.Waiter().Context(), a); err != nil {
+		if err = module.Startup(a.Waiter().Context(), a); err != nil {
 			return err
 		}
 	}
@@ -132,14 +136,6 @@ func run() error {
 
 func (a *app) waitForPool(ctx context.Context) error {
 	group, gCtx := errgroup.WithContext(ctx)
-
-	group.Go(func() (err error) {
-		a.log.Infow("start pgpool", "conn", a.cfg.PGConn)
-		if a.pool, err = pgxpool.New(context.Background(), a.cfg.PGConn); err != nil {
-			a.log.Errorln("failed to create pgpool, exit")
-		}
-		return
-	})
 
 	group.Go(func() error {
 		<-gCtx.Done()

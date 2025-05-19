@@ -1,25 +1,32 @@
 package domain
 
 import (
-	"fmt"
+	"errors"
 
 	"github.com/go-telegram/bot/models"
 	"github.com/bd878/lesnotes_bot/internal/i18n"
 )
 
 var (
-	ErrChatExists = fmt.Errorf("chat exists")
+	ErrChatExists = errors.New("chat exists")
+	ErrChatEmpty = errors.New("chat is nil")
 )
 
 type Chat struct {
-	*models.Chat
+	ID string
+	Chat *models.Chat
 	Lang i18n.LangCode
 }
 
-func NewChat() *Chat {
-	return &Chat{Lang: i18n.LangRu}
+func NewChat(id string) *Chat {
+	return &Chat{ID: id}
 }
 
-func CreateChat(chat *models.Chat) (*Chat, error) {
-	return &Chat{Chat: chat}, nil
+func CreateChat(id string, chat *models.Chat) (*Chat, error) {
+	c := NewChat(id)
+	if chat == nil {
+		return nil, ErrChatEmpty
+	}
+	c.Chat = chat
+	return c, nil
 }

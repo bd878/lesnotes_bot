@@ -4,49 +4,71 @@ import (
 	"context"
 
 	"github.com/go-telegram/bot/models"
-	botApi "github.com/go-telegram/bot"
 
-	"github.com/bd878/lesnotes_bot/internal/logger"
 	"github.com/bd878/lesnotes_bot/chats/internal/domain"
 )
 
 type (
+	CreateChat struct {
+		ID string
+		Chat *models.Chat
+	}
+
+	CreateMessage struct {
+		ID string
+		Text string
+		UserID int32
+	}
+
+	ConfirmIssue struct {
+		IssueID int
+	}
+
+	KickMember struct {
+	}
+
 	App interface {
-		Start(ctx context.Context, b *botApi.Bot, update *models.Update) error
+		CreateChat(ctx context.Context, cmd CreateChat) error
+		KickMember(ctx context.Context, cmd KickMember) error
+		CreateMessage(ctx context.Context, cmd CreateMessage) error
+		ConfirmIssue(ctx context.Context, cmd ConfirmIssue) error
 	}
 
 	Application struct {
 		chats domain.ChatsRepository
-		logger *logger.Logger
+		messages domain.MessagesRepository
 	}
 )
 
 var _ App = (*Application)(nil)
 
-func New(chats domain.ChatsRepository, logger *logger.Logger) *Application {
+func New(chats domain.ChatsRepository, messages domain.MessagesRepository) *Application {
 	return &Application{
 		chats: chats,
-		logger: logger,
+		messages: messages,
 	}
 }
 
-func (a *Application) Start(ctx context.Context, b *botApi.Bot, update *models.Update) error {
-	chat, err := domain.CreateChat(&update.Message.Chat)
+func (a Application) CreateChat(ctx context.Context, cmd CreateChat) error {
+	chat, err := domain.CreateChat(cmd.ID, cmd.Chat)
 	if err != nil {
 		return err
 	}
 
-	err = a.chats.Save(ctx, chat)
-	if err != nil {
-		return err
-	}
+	return a.chats.Save(ctx, chat)
+}
 
-	_, err = b.SendMessage(ctx, &botApi.SendMessageParams{
-		ChatID: update.Message.Chat.ID,
-		Text: "created",
-	})
-	if err != nil {
-		return err
-	}
+// TODO: move to separate module "messages"
+func (a Application) CreateMessage(ctx context.Context, cmd CreateMessage) error {
+	_, err := domain.CreateMessage(cmd.ID, cmd.Text, cmd.UserID)
+	return err
+}
+
+func (a Application) ConfirmIssue(ctx context.Context, cmd ConfirmIssue) error {
+	return nil
+}
+
+func (a Application) KickMember(ctx context.Context, cmd KickMember) error {
+	// TODO: implement
 	return nil
 }
