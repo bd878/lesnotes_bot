@@ -2,6 +2,7 @@ package server
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/google/uuid"
 	"github.com/go-telegram/bot/models"
@@ -59,10 +60,19 @@ func (s server) KickMember(ctx context.Context, b *botApi.Bot, update *models.Up
 func (s server) CreateMessage(ctx context.Context, b *botApi.Bot, update *models.Update) {
 	id := uuid.New().String()
 
-	err := s.app.CreateMessage(ctx, application.CreateMessage{
+	res, err := s.app.CreateMessage(ctx, application.CreateMessage{
 		ID: id,
 		UserID: galleryUsers.PublicUserID,
 		Text: update.Message.Text,
+	})
+	if err != nil {
+		s.logger.Errorln(err)
+		return
+	}
+
+	_, err = b.SendMessage(ctx, &botApi.SendMessageParams{
+		ChatID: update.Message.Chat.ID,
+		Text: fmt.Sprintf("https://stage.lesnotes.space/m/%d", res),
 	})
 	if err != nil {
 		s.logger.Errorln(err)

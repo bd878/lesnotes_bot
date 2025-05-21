@@ -29,7 +29,7 @@ func (a Application) CreateChat(ctx context.Context, cmd application.CreateChat)
 	return a.App.CreateChat(ctx, cmd)
 }
 
-func (a Application) CreateMessage(ctx context.Context, cmd application.CreateMessage) (err error) {
+func (a Application) CreateMessage(ctx context.Context, cmd application.CreateMessage) (res int32, err error) {
 	a.logger.Infoln("---> CreateMessage")
 	defer func() { a.logger.WithOptions(zap.Fields(zap.Error(err))).Infoln("<-- CreateMessage") }()
 	return a.App.CreateMessage(ctx, cmd)

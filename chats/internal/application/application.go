@@ -30,7 +30,7 @@ type (
 	App interface {
 		CreateChat(ctx context.Context, cmd CreateChat) error
 		KickMember(ctx context.Context, cmd KickMember) error
-		CreateMessage(ctx context.Context, cmd CreateMessage) error
+		CreateMessage(ctx context.Context, cmd CreateMessage) (int32, error)
 		ConfirmIssue(ctx context.Context, cmd ConfirmIssue) error
 	}
 
@@ -59,9 +59,16 @@ func (a Application) CreateChat(ctx context.Context, cmd CreateChat) error {
 }
 
 // TODO: move to separate module "messages"
-func (a Application) CreateMessage(ctx context.Context, cmd CreateMessage) error {
-	_, err := domain.CreateMessage(cmd.ID, cmd.Text, cmd.UserID)
-	return err
+func (a Application) CreateMessage(ctx context.Context, cmd CreateMessage) (int32, error) {
+	msg, err := domain.CreateMessage(cmd.ID, cmd.Text, cmd.UserID)
+	if err != nil {
+		return 0, err
+	}
+	id, err := a.messages.Save(ctx, msg)
+	if err != nil {
+		return 0, err
+	}
+	return id, err
 }
 
 func (a Application) ConfirmIssue(ctx context.Context, cmd ConfirmIssue) error {
