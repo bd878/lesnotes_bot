@@ -8,6 +8,7 @@ import (
 	"encoding/json"
 
 	"github.com/bd878/lesnotes_bot/chats/internal/domain"
+	"github.com/bd878/lesnotes_bot/internal/logger"
 	galleryMessages "github.com/bd878/gallery/server/messages/pkg/model"
 )
 
@@ -25,6 +26,8 @@ func (g MessagesGateway) Save(ctx context.Context, message *domain.Message) (int
 	if err != nil {
 		return 0, err
 	}
+
+	logger.Log.Debugf("%s\n", data)
 
 	buff := bytes.NewReader(data)
 
