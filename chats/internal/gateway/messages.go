@@ -30,7 +30,7 @@ func (g MessagesGateway) Save(ctx context.Context, message *domain.Message) (int
 
 	buff := bytes.NewReader(data)
 
-	req, err := http.NewRequestWithContext(ctx, "post", g.url + "/messages/v2/send", buff)
+	req, err := http.NewRequestWithContext(ctx, "POST", g.url + "/messages/v2/send", buff)
 	if err != nil {
 		return 0, err
 	}
@@ -49,8 +49,6 @@ func (g MessagesGateway) Save(ctx context.Context, message *domain.Message) (int
 		logger.Log.Debug(err)
 		return 0, err
 	}
-
-	logger.Log.Debugf("%s\n", data)
 
 	var result galleryMessages.NewMessageServerResponse
 	if err := json.Unmarshal(data, &result); err != nil {
