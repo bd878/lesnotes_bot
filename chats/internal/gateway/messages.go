@@ -24,6 +24,7 @@ func NewMessagesGateway(client *http.Client, url string) MessagesGateway {
 func (g MessagesGateway) Save(ctx context.Context, message *domain.Message) (int32, error) {
 	data, err := json.Marshal(message.Message)
 	if err != nil {
+		logger.Log.Debug(err)
 		return 0, err
 	}
 
@@ -38,6 +39,7 @@ func (g MessagesGateway) Save(ctx context.Context, message *domain.Message) (int
 
 	resp, err := g.client.Do(req)
 	if err != nil {
+		logger.Log.Debug(err)
 		return 0, err
 	}
 
@@ -47,6 +49,8 @@ func (g MessagesGateway) Save(ctx context.Context, message *domain.Message) (int
 		logger.Log.Debug(err)
 		return 0, err
 	}
+
+	logger.Log.Debugf("%s\n", data)
 
 	var result galleryMessages.NewMessageServerResponse
 	if err := json.Unmarshal(data, &result); err != nil {
