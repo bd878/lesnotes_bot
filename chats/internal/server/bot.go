@@ -6,6 +6,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/go-telegram/bot/models"
 	botApi "github.com/go-telegram/bot"
+	galleryUsers "github.com/bd878/gallery/server/users/pkg/model"
 
 	"github.com/bd878/lesnotes_bot/internal/bot"
 	"github.com/bd878/lesnotes_bot/internal/logger"
@@ -60,6 +61,7 @@ func (s server) CreateMessage(ctx context.Context, b *botApi.Bot, update *models
 
 	err := s.app.CreateMessage(ctx, application.CreateMessage{
 		ID: id,
+		UserID: galleryUsers.PublicUserID,
 		Text: update.Message.Text,
 	})
 	if err != nil {
