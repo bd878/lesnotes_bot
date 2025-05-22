@@ -7,8 +7,8 @@ import (
 	"net/http"
 	"encoding/json"
 
-	"github.com/bd878/lesnotes_bot/chats/internal/domain"
 	"github.com/bd878/lesnotes_bot/internal/logger"
+	"github.com/bd878/lesnotes_bot/messages/internal/domain"
 	galleryMessages "github.com/bd878/gallery/server/messages/pkg/model"
 )
 

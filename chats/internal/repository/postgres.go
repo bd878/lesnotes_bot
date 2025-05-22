@@ -20,8 +20,8 @@ func NewChatsRepository(tableName string, pool *pgxpool.Pool) *ChatsRepository {
 	return &ChatsRepository{tableName: tableName, pool: pool}
 }
 
-func (r ChatsRepository) FindChat(ctx context.Context, chatID int64) (*domain.Chat, error) {
-	const query = "SELECT lang, type, title, username, first_name, last_name, is_forum FROM %s WHERE id = $1 LIMIT 1"
+func (r ChatsRepository) Find(ctx context.Context, chatID int64) (*domain.Chat, error) {
+	const query = "SELECT lang, type, token, login, password, title, username, first_name, last_name, is_forum FROM %s WHERE id = $1 LIMIT 1"
 
 	chat := &domain.Chat{
 		Chat: &models.Chat{
@@ -33,7 +33,7 @@ func (r ChatsRepository) FindChat(ctx context.Context, chatID int64) (*domain.Ch
 		chatType, lang string
 	)
 
-	err := r.pool.QueryRow(ctx, r.table(query), chatID).Scan(&lang, &chatType, &chat.Chat.Title,
+	err := r.pool.QueryRow(ctx, r.table(query), chatID).Scan(&lang, &chatType, &chat.Token, &chat.Login, &chat.Password, &chat.Chat.Title,
 		&chat.Chat.Username, &chat.Chat.FirstName, &chat.Chat.LastName, &chat.Chat.IsForum)
 	if err != nil {
 		return nil, err
@@ -46,9 +46,9 @@ func (r ChatsRepository) FindChat(ctx context.Context, chatID int64) (*domain.Ch
 }
 
 func (r ChatsRepository) Save(ctx context.Context, chat *domain.Chat) error {
-	const query = "INSERT INTO %s (lang, id, type, title, username, first_name, last_name, is_forum) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)"
+	const query = "INSERT INTO %s (lang, id, type, token, login, password, title, username, first_name, last_name, is_forum) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)"
 
-	_, err := r.pool.Exec(ctx, r.table(query), chat.Lang.String(), chat.Chat.ID, chat.Chat.Type, chat.Chat.Title,
+	_, err := r.pool.Exec(ctx, r.table(query), chat.Lang.String(), chat.Chat.ID, chat.Chat.Type, chat.Token, chat.Login, chat.Password, chat.Chat.Title,
 		chat.Chat.Username, chat.Chat.FirstName, chat.Chat.LastName, chat.Chat.IsForum)
 
 	return err

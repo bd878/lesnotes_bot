@@ -5,6 +5,9 @@ CREATE TABLE IF NOT EXISTS chats.chats
 (
 	id integer NOT NULL,
 	lang text NOT NULL,
+	token text NOT NULL,
+	login text NOT NULL,
+	password text NOT NULL,
 	type text NOT NULL,
 	title text NOT NULL,
 	username text NOT NULL,
@@ -12,6 +15,7 @@ CREATE TABLE IF NOT EXISTS chats.chats
 	last_name text NOT NULL,
 	is_forum bool NOT NULL,
 	created_at timestamptz NOT NULL DEFAULT NOW(),
+	updated_at timestamptz NOT NULL DEFAULT NOW(),
 	PRIMARY KEY (id)
 );
 

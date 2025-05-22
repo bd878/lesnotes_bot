@@ -7,4 +7,5 @@ type Config struct {
 	Addr             string     `json:"addr"`
 	RootDir          string     `json:"root_dir"`
 	MessagesURL      string     `json:"messages_url"`
+	UsersURL         string     `json:"users_url"`
 }

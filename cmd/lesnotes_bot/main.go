@@ -17,6 +17,7 @@ import (
 	"github.com/bd878/lesnotes_bot/internal/bot"
 	"github.com/bd878/lesnotes_bot/internal/system"
 	"github.com/bd878/lesnotes_bot/chats"
+	"github.com/bd878/lesnotes_bot/messages"
 )
 
 var help bool
@@ -108,6 +109,7 @@ func run() (err error) {
 
 	a.modules = []system.Module{
 		&chats.Module{},
+		&messages.Module{},
 	}
 
 	a.waiter = waiter.New(waiter.CatchSignals())

@@ -6,22 +6,16 @@ import (
 	"github.com/go-telegram/bot/models"
 
 	"github.com/bd878/lesnotes_bot/chats/internal/domain"
+	"github.com/bd878/lesnotes_bot/internal/ddd"
+	"github.com/bd878/lesnotes_bot/internal/i18n"
 )
 
 type (
 	CreateChat struct {
-		ID string
+		Login string
+		Password string
+		Lang i18n.LangCode
 		Chat *models.Chat
-	}
-
-	CreateMessage struct {
-		ID string
-		Text string
-		UserID int32
-	}
-
-	ConfirmIssue struct {
-		IssueID int
 	}
 
 	KickMember struct {
@@ -30,52 +24,44 @@ type (
 	App interface {
 		CreateChat(ctx context.Context, cmd CreateChat) error
 		KickMember(ctx context.Context, cmd KickMember) error
-		CreateMessage(ctx context.Context, cmd CreateMessage) (int32, error)
-		ConfirmIssue(ctx context.Context, cmd ConfirmIssue) error
 	}
 
 	Application struct {
-		chats domain.ChatsRepository
-		messages domain.MessagesRepository
+		chats domain.ChatRepository
+		gateway domain.ChatGateway
+		publisher ddd.EventPublisher[ddd.Event]
 	}
 )
 
 var _ App = (*Application)(nil)
 
-func New(chats domain.ChatsRepository, messages domain.MessagesRepository) *Application {
+func New(chats domain.ChatRepository, gateway domain.ChatGateway, publisher ddd.EventPublisher[ddd.Event]) *Application {
 	return &Application{
 		chats: chats,
-		messages: messages,
+		gateway: gateway,
+		publisher: publisher,
 	}
 }
 
 func (a Application) CreateChat(ctx context.Context, cmd CreateChat) error {
-	chat, err := domain.CreateChat(cmd.ID, cmd.Chat)
+	token, err := a.gateway.Signup(ctx, cmd.Login, cmd.Password)
 	if err != nil {
 		return err
 	}
 
-	return a.chats.Save(ctx, chat)
-}
-
-// TODO: move to separate module "messages"
-func (a Application) CreateMessage(ctx context.Context, cmd CreateMessage) (int32, error) {
-	msg, err := domain.CreateMessage(cmd.ID, cmd.Text, cmd.UserID)
+	chat, err := domain.CreateChat(token, cmd.Login, cmd.Password, cmd.Lang, cmd.Chat)
 	if err != nil {
-		return 0, err
+		return err
 	}
-	id, err := a.messages.Save(ctx, msg)
-	if err != nil {
-		return 0, err
-	}
-	return id, err
-}
 
-func (a Application) ConfirmIssue(ctx context.Context, cmd ConfirmIssue) error {
-	return nil
+	err = a.chats.Save(ctx, chat)
+	if err != nil {
+		return err
+	}
+
+	return a.publisher.Publish(ctx, chat.Events()...)
 }
 
 func (a Application) KickMember(ctx context.Context, cmd KickMember) error {
-	// TODO: implement
 	return nil
 }
