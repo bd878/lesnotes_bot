@@ -114,12 +114,6 @@ func run() (err error) {
 
 	a.waiter = waiter.New(waiter.CatchSignals())
 
-	for _, module := range a.modules {
-		if err = module.Startup(a.Waiter().Context(), a); err != nil {
-			return err
-		}
-	}
-
 	a.server = &http.Server{
 		Addr: a.cfg.Addr,
 	}
@@ -132,6 +126,12 @@ func run() (err error) {
 		a.waitForBot,
 		a.waitForWeb,
 	)
+
+	for _, module := range a.modules {
+		if err = module.Startup(a.Waiter().Context(), a); err != nil {
+			return err
+		}
+	}
 
 	return a.waiter.Wait()
 }
