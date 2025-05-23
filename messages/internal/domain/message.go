@@ -2,8 +2,11 @@ package domain
 
 import (
 	"errors"
+	"github.com/bd878/lesnotes_bot/internal/ddd"
 	galleryMessages "github.com/bd878/gallery/server/messages/pkg/model"
 )
+
+const MessageAggregate = "messages.Message"
 
 var (
 	ErrTextEmpty = errors.New("text empty")
@@ -11,28 +14,35 @@ var (
 )
 
 type Message struct {
-	ID string
+	ddd.Aggregate
 	Message *galleryMessages.Message
+	ChatID int64
 }
 
-func NewMessage(id string) *Message {
-	return &Message{ID: id}
+func NewMessage() *Message {
+	return &Message{
+		Aggregate: ddd.NewAggregate(MessageAggregate),
+	}
 }
 
-func CreateMessage(id string, text string, userID int32) (*Message, error) {
-	if text == "" {
+func CreateMessage(id int32, galleryMessage *galleryMessages.Message, chatID int64) (*Message, error) {
+	if galleryMessage.Text == "" {
 		return nil, ErrTextEmpty
 	}
 
-	if userID == 0 {
+	if galleryMessage.UserID == 0 {
 		return nil, ErrUserIDEmpty
 	}
 
-	msg := NewMessage(id)
-	msg.Message = &galleryMessages.Message{
-		Text: text,
-		UserID: userID,
-	}
+	message := NewMessage()
 
-	return msg, nil
+	galleryMessage.ID = id
+	message.Message = galleryMessage
+	message.ChatID = chatID
+
+	message.AddEvent(MessageCreatedEvent, &MessageCreated{
+		Message: message,
+	})
+
+	return message, nil
 }

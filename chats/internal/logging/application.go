@@ -7,6 +7,7 @@ import (
 
 	"github.com/bd878/lesnotes_bot/internal/logger"
 	"github.com/bd878/lesnotes_bot/chats/internal/application"
+	"github.com/bd878/lesnotes_bot/chats/internal/domain"
 )
 
 type Application struct {
@@ -27,6 +28,12 @@ func (a Application) CreateChat(ctx context.Context, cmd application.CreateChat)
 	a.logger.Infoln("--> CreateChat")
 	defer func() { a.logger.WithOptions(zap.Fields(zap.Error(err))).Infoln("<-- CreateChat") }()
 	return a.App.CreateChat(ctx, cmd)
+}
+
+func (a Application) GetChat(ctx context.Context, cmd application.GetChat) (chat *domain.Chat, err error) {
+	a.logger.Infoln("--> GetChat")
+	defer func() { a.logger.WithOptions(zap.Fields(zap.Error(err))).Infoln("<-- GetChat") }()
+	return a.App.GetChat(ctx, cmd)
 }
 
 func (a Application) KickMember(ctx context.Context, cmd application.KickMember) (err error) {

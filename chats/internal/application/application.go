@@ -19,11 +19,17 @@ type (
 	}
 
 	KickMember struct {
+		ID int64
+	}
+
+	GetChat struct {
+		ID int64
 	}
 
 	App interface {
 		CreateChat(ctx context.Context, cmd CreateChat) error
 		KickMember(ctx context.Context, cmd KickMember) error
+		GetChat(ctx context.Context, query GetChat) (*domain.Chat, error)
 	}
 
 	Application struct {
@@ -62,6 +68,72 @@ func (a Application) CreateChat(ctx context.Context, cmd CreateChat) error {
 	return a.publisher.Publish(ctx, chat.Events()...)
 }
 
+func (a Application) GetChat(ctx context.Context, query GetChat) (*domain.Chat, error) {
+	var (
+		token string
+		err error
+	)
+
+	chat, err := a.chats.Load(ctx, query.ID)
+	if err != nil {
+		return nil, err
+	}
+
+	err = a.gateway.Auth(ctx, chat.Token)
+	switch err {
+	case domain.ErrExpired:
+		token, err = a.gateway.Login(ctx, chat.Login, chat.Password)
+		if err != nil {
+			return nil, err
+		}
+		err = a.chats.UpdateToken(ctx, chat.Chat.ID, token)
+		if err == nil {
+			return nil, err
+		}
+	case nil:
+	default:
+		return nil, err
+	}
+
+	chat.Token = token
+
+	return chat, nil
+}
+
 func (a Application) KickMember(ctx context.Context, cmd KickMember) error {
-	return nil
+	var token string
+
+	chat, err := a.chats.Load(ctx, cmd.ID)
+	if err != nil {
+		return err
+	}
+
+	err = a.gateway.Auth(ctx, chat.Token)
+	switch err {
+	case domain.ErrExpired:
+		token, err = a.gateway.Login(ctx, chat.Login, chat.Password)
+		if err != nil {
+			return err
+		}
+	case nil:
+		token = chat.Token
+	default:
+		return err
+	}
+
+	err = a.chats.Remove(ctx, cmd.ID)
+	if err != nil {
+		return err
+	}
+
+	if err = chat.Delete(); err != nil {
+		return err
+	}
+
+	err = a.gateway.Delete(ctx, chat.Login, chat.Password, token)
+	if err != nil {
+		return err
+	}
+
+	return a.publisher.Publish(ctx, chat.Events()...)
 }

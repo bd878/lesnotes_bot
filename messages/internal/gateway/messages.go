@@ -8,7 +8,7 @@ import (
 	"encoding/json"
 
 	"github.com/bd878/lesnotes_bot/internal/logger"
-	"github.com/bd878/lesnotes_bot/messages/internal/domain"
+	gallerymodel "github.com/bd878/gallery/server/pkg/model"
 	galleryMessages "github.com/bd878/gallery/server/messages/pkg/model"
 )
 
@@ -21,8 +21,17 @@ func NewMessagesGateway(client *http.Client, url string) MessagesGateway {
 	return MessagesGateway{client: client, url: url}
 }
 
-func (g MessagesGateway) Save(ctx context.Context, message *domain.Message) (int32, error) {
-	data, err := json.Marshal(message.Message)
+func (g MessagesGateway) Save(ctx context.Context, token string, message *galleryMessages.Message) (int32, error) {
+	data, err := json.Marshal(message)
+	if err != nil {
+		logger.Log.Debug(err)
+		return 0, err
+	}
+
+	data, err = json.Marshal(&gallerymodel.JSONServerRequest{
+		Token: token,
+		Req: json.RawMessage(data),
+	})
 	if err != nil {
 		logger.Log.Debug(err)
 		return 0, err

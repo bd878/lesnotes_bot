@@ -2,6 +2,10 @@ github.com/bd878/gallery v0.0.0-20250511180713-c6f9cc6dc04f h1:Z/UacchW7I8zIF68n
 github.com/bd878/gallery v0.0.0-20250511180713-c6f9cc6dc04f/go.mod h1:a3OiWpPYQqOPjprmGhOVQSUTB7Sz5zWYIrBW6QdTZls=
 github.com/bd878/gallery v0.0.0-20250522141148-72ca9381b920 h1:7wlM/uhkoCx/64JSuZNb6OHSMvWzp/Kzgt1X08sTumQ=
 github.com/bd878/gallery v0.0.0-20250522141148-72ca9381b920/go.mod h1:a3OiWpPYQqOPjprmGhOVQSUTB7Sz5zWYIrBW6QdTZls=
+github.com/bd878/gallery v0.0.0-20250525120107-6c479c6bac10 h1:iHandmYzHMfu1EUSPDOzMXQ1X76P9rsdKAxsmRA6f9Q=
+github.com/bd878/gallery v0.0.0-20250525120107-6c479c6bac10/go.mod h1:a3OiWpPYQqOPjprmGhOVQSUTB7Sz5zWYIrBW6QdTZls=
+github.com/bd878/gallery v0.0.0-20250525131352-c86ad0fdd275 h1:ViI0tAFtET+ZTtljBAvaQYzH9vlvn06XurPqcrWssfw=
+github.com/bd878/gallery v0.0.0-20250525131352-c86ad0fdd275/go.mod h1:a3OiWpPYQqOPjprmGhOVQSUTB7Sz5zWYIrBW6QdTZls=
 github.com/davecgh/go-spew v1.1.0/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
 github.com/davecgh/go-spew v1.1.1 h1:vj9j/u1bqnvCEfJOwUhtlOARqs3+rkHYY13jYWTU97c=
 github.com/davecgh/go-spew v1.1.1/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=

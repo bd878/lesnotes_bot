@@ -1,23 +1,28 @@
 package main
 
 import (
-	"flag"
-	"os"
-	"fmt"
-	"net/http"
 	"context"
+	"errors"
+	"flag"
+	"fmt"
+	"net"
+	"net/http"
+	"os"
+	"time"
 
-	"golang.org/x/sync/errgroup"
-	"github.com/jackc/pgx/v5/pgxpool"
 	botApi "github.com/go-telegram/bot"
+	"github.com/jackc/pgx/v5/pgxpool"
+	"golang.org/x/sync/errgroup"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/reflection"
 
-	"github.com/bd878/lesnotes_bot/internal/logger"
-	"github.com/bd878/lesnotes_bot/internal/waiter"
-	"github.com/bd878/lesnotes_bot/internal/config"
-	"github.com/bd878/lesnotes_bot/internal/bot"
-	"github.com/bd878/lesnotes_bot/internal/system"
 	"github.com/bd878/lesnotes_bot/chats"
 	"github.com/bd878/lesnotes_bot/messages"
+	"github.com/bd878/lesnotes_bot/internal/bot"
+	"github.com/bd878/lesnotes_bot/internal/config"
+	"github.com/bd878/lesnotes_bot/internal/logger"
+	"github.com/bd878/lesnotes_bot/internal/system"
+	"github.com/bd878/lesnotes_bot/internal/waiter"
 )
 
 var help bool
@@ -52,12 +57,13 @@ func main() {
 }
 
 type app struct {
-	cfg config.Config
-	waiter waiter.Waiter
-	log *logger.Logger
-	pool *pgxpool.Pool
-	bot *bot.Bot
-	server *http.Server
+	cfg     config.Config
+	waiter  waiter.Waiter
+	log     *logger.Logger
+	pool    *pgxpool.Pool
+	bot     *bot.Bot
+	rpc     *grpc.Server
+	server  *http.Server
 	modules []system.Module
 }
 
@@ -89,6 +95,10 @@ func (a *app) Server() *http.Server {
 	return a.server
 }
 
+func (a *app) RPC() *grpc.Server {
+	return a.rpc
+}
+
 var _ system.Monolith = (*app)(nil)
 
 func run() (err error) {
@@ -99,7 +109,7 @@ func run() (err error) {
 	a.bot = bot.New(
 		os.Getenv("TELEGRAM_LESNOTES_BOT_TOKEN"),
 		os.Getenv("TELEGRAM_LESNOTES_BOT_WEBHOOK_SECRET_TOKEN"),
-		a.cfg.WebhookURL + a.cfg.WebhookPath,
+		a.cfg.WebhookURL+a.cfg.WebhookPath,
 		botApi.WithDebug(),
 	)
 	a.pool, err = pgxpool.New(context.Background(), a.cfg.PGConn)
@@ -120,11 +130,13 @@ func run() (err error) {
 	mux := http.NewServeMux()
 	mux.HandleFunc(a.cfg.WebhookPath, a.Bot().WebhookHandler())
 	a.server.Handler = mux
+	a.rpc = initRpc()
 
 	a.waiter.Add(
 		a.waitForPool,
 		a.waitForBot,
 		a.waitForWeb,
+		a.waitForRPC,
 	)
 
 	for _, module := range a.modules {
@@ -134,6 +146,50 @@ func run() (err error) {
 	}
 
 	return a.waiter.Wait()
+}
+
+func initRpc() *grpc.Server {
+	server := grpc.NewServer()
+	reflection.Register(server)
+
+	return server
+}
+
+func (a *app) waitForRPC(ctx context.Context) error {
+	listener, err := net.Listen("tcp", a.cfg.Rpc.Address())
+	if err != nil {
+		return err
+	}
+
+	group, gCtx := errgroup.WithContext(ctx)
+	group.Go(func() error {
+		a.log.Infof("rpc server started: %s\n", a.cfg.Rpc.Address())
+		defer a.log.Infoln("rpc server shutdown")
+		if err := a.RPC().Serve(listener); err != nil && err != grpc.ErrServerStopped {
+			return err
+		}
+		return nil
+	})
+	group.Go(func() error {
+		<-gCtx.Done()
+		a.log.Infoln("closing rpc server")
+		stopped := make(chan struct{})
+		go func() {
+			a.RPC().GracefulStop()
+			close(stopped)
+		}()
+		timeout := time.NewTimer(a.cfg.ShutdownTimeout)
+		select {
+		case <-timeout.C:
+			a.RPC().Stop()
+			a.log.Errorln("rpc server failed to stop gracefully")
+			return errors.New("server failed to stop gracefully")
+		case <-stopped:
+			return nil
+		}
+	})
+
+	return group.Wait()
 }
 
 func (a *app) waitForPool(ctx context.Context) error {
@@ -153,7 +209,7 @@ func (a *app) waitForBot(ctx context.Context) error {
 	group, gCtx := errgroup.WithContext(ctx)
 
 	group.Go(func() error {
-		a.log.Infow("start webhook", "url", a.cfg.WebhookURL + a.cfg.WebhookPath)
+		a.log.Infow("start webhook", "url", a.cfg.WebhookURL+a.cfg.WebhookPath)
 		defer a.log.Infoln("webhook shutdown")
 		a.bot.StartWebhook(ctx)
 		return nil

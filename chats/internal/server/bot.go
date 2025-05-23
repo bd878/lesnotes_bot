@@ -42,7 +42,9 @@ func (s server) CreateChat(ctx context.Context, b *botApi.Bot, update *models.Up
 }
 
 func (s server) KickMember(ctx context.Context, b *botApi.Bot, update *models.Update) {
-	err := s.app.KickMember(ctx, application.KickMember{})
+	err := s.app.KickMember(ctx, application.KickMember{
+		ID: update.MyChatMember.Chat.ID,
+	})
 	if err != nil {
 		s.logger.Errorln(err)
 		return

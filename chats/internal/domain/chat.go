@@ -65,4 +65,10 @@ func CreateChat(token, login, password string, lang i18n.LangCode, botChat *mode
 	return chat, nil
 }
 
+func (c *Chat) Delete() error {
+	c.AddEvent(ChatDeletedEvent, &ChatDeleted{})
+
+	return nil
+}
+
 func (Chat) Key() string { return ChatAggregate }

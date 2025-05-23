@@ -2,13 +2,14 @@ package handlers
 
 import (
 	"context"
+	"fmt"
 
 	botApi "github.com/go-telegram/bot"
 
 	"github.com/bd878/lesnotes_bot/internal/bot"
 	"github.com/bd878/lesnotes_bot/internal/logger"
 	"github.com/bd878/lesnotes_bot/internal/ddd"
-	"github.com/bd878/lesnotes_bot/chats/internal/domain"
+	"github.com/bd878/lesnotes_bot/messages/internal/domain"
 )
 
 type domainHandlers struct {
@@ -21,37 +22,28 @@ func NewDomainHandlers(bot *bot.Bot, logger *logger.Logger) *domainHandlers {
 }
 
 func RegisterDomainEventHandlers(subscriber ddd.EventSubscriber[ddd.Event], handler ddd.EventHandler[ddd.Event]) {
-	subscriber.Subscribe(handler, domain.ChatCreatedEvent)
+	subscriber.Subscribe(handler, domain.MessageCreatedEvent)
 }
 
 func (h domainHandlers) HandleEvent(ctx context.Context, event ddd.Event) error {
 	switch event.EventName() {
-	case domain.ChatCreatedEvent:
-		return h.onChatCreatedEvent(ctx, event)
-	case domain.ChatDeletedEvent:
-		return h.onChatDeletedEvent(ctx, event)
+	case domain.MessageCreatedEvent:
+		return h.onMessageCreatedEvent(ctx, event)
 	}
 	return nil
 }
 
-func (h domainHandlers) onChatCreatedEvent(ctx context.Context, event ddd.Event) error {
-	payload := event.Payload().(*domain.ChatCreated)
+func (h domainHandlers) onMessageCreatedEvent(ctx context.Context, event ddd.Event) error {
+	payload := event.Payload().(*domain.MessageCreated)
 
 	_, err := h.bot.SendMessage(ctx, &botApi.SendMessageParams{
-		ChatID: payload.Chat.ID,
-		Text: "created",
+		ChatID: payload.Message.ChatID,
+		Text: fmt.Sprintf("https://stage.lesnotes.space/m/%d", payload.Message.Message.ID),
 	})
 	if err != nil {
 		h.logger.Errorln(err)
 		return err
 	}
-	return nil
-}
-
-func (h domainHandlers) onChatDeletedEvent(ctx context.Context, event ddd.Event) error {
-	payload := event.Payload().(*domain.ChatDeleted)
-
-	h.logger.Infow("chat deleted", "id", payload.Chat.ID)
 
 	return nil
 }

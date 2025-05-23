@@ -10,6 +10,7 @@ import (
 	"github.com/bd878/lesnotes_bot/chats/internal/handlers"
 	"github.com/bd878/lesnotes_bot/chats/internal/gateway"
 	"github.com/bd878/lesnotes_bot/chats/internal/http"
+	"github.com/bd878/lesnotes_bot/chats/internal/grpc"
 	"github.com/bd878/lesnotes_bot/chats/internal/repository"
 	"github.com/bd878/lesnotes_bot/chats/internal/application"
 )
@@ -19,13 +20,13 @@ type Module struct {}
 func (m *Module) Startup(ctx context.Context, mono system.Monolith) error {
 	eventDispatcher := ddd.NewEventDispatcher[ddd.Event]()
 
-	client, err := http.NewClient()
+	httpClient, err := http.NewClient()
 	if err != nil {
 		return err
 	}
 
 	gallery := logging.LogGatewayHandlers(
-		gateway.NewChatsGateway(client, mono.Config().UsersURL),
+		gateway.NewChatGateway(httpClient, mono.Config().UsersURL),
 		mono.Log(),
 	)
 
@@ -33,7 +34,7 @@ func (m *Module) Startup(ctx context.Context, mono system.Monolith) error {
 		handlers.NewDomainHandlers(mono.Bot(), mono.Log()), mono.Log(),
 	)
 
-	chats := repository.NewChatsRepository("chats.chats", mono.Pool())
+	chats := repository.NewChatRepository("chats.chats", mono.Pool())
 	app := logging.LogApplicationAccess(application.New(chats, gallery, eventDispatcher), mono.Log())
 
 	if err := server.RegisterBot(app, mono.Bot(), mono.Log()); err != nil {
@@ -41,6 +42,10 @@ func (m *Module) Startup(ctx context.Context, mono system.Monolith) error {
 	}
 
 	handlers.RegisterDomainEventHandlers(eventDispatcher, domainHandlers)
+
+	if err := grpc.RegisterServer(ctx, app, mono.RPC()); err != nil {
+		return err
+	}
 
 	return nil
 }

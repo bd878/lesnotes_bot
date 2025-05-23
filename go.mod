@@ -3,7 +3,7 @@ module github.com/bd878/lesnotes_bot
 go 1.23.6
 
 require (
-	github.com/bd878/gallery v0.0.0-20250522141148-72ca9381b920
+	github.com/bd878/gallery v0.0.0-20250525131352-c86ad0fdd275
 	github.com/go-telegram/bot v1.14.1
 	github.com/google/uuid v1.6.0
 	github.com/jackc/pgx/v5 v5.7.5

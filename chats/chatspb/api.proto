@@ -1,0 +1,22 @@
+syntax = "proto3";
+
+option go_package = "github.com/bd878/lesnotes_bot/chats/chatspb";
+
+service ChatsService {
+  rpc GetChat(GetChatRequest) returns (GetChatResponse) {};
+}
+
+message Chat {
+  int64 id = 1;
+  string token = 2;
+  string name = 3;
+  string lang = 4;
+}
+
+message GetChatRequest {
+  int64 id = 1;
+}
+
+message GetChatResponse {
+  Chat chat = 1;
+}
