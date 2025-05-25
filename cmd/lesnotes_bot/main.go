@@ -178,7 +178,7 @@ func (a *app) waitForRPC(ctx context.Context) error {
 			a.RPC().GracefulStop()
 			close(stopped)
 		}()
-		timeout := time.NewTimer(a.cfg.ShutdownTimeout)
+		timeout := time.NewTimer(a.cfg.ShutdownTimeout.Duration)
 		select {
 		case <-timeout.C:
 			a.RPC().Stop()
