@@ -24,7 +24,7 @@ func LogDomainEventHandlers[T ddd.Event](handler ddd.EventHandler[T], logger *lo
 }
 
 func (h domainHandlers[T]) HandleEvent(ctx context.Context, event T) (err error) {
-	h.logger.Infof("--> Chats.On(%s)\n", event.EventName())
-	defer func() { h.logger.WithOptions(zap.Fields(zap.Error(err))).Infof("<-- Chats.On(%s)\n", event.EventName()) }()
+	h.logger.Infof("--> Chats.On(%s)", event.EventName())
+	defer func() { h.logger.WithOptions(zap.Fields(zap.Error(err))).Infof("<-- Chats.On(%s)", event.EventName()) }()
 	return h.EventHandler.HandleEvent(ctx, event)
 }

@@ -38,7 +38,7 @@ func (h domainHandlers) onChatCreatedEvent(ctx context.Context, event ddd.Event)
 	payload := event.Payload().(*domain.ChatCreated)
 
 	_, err := h.bot.SendMessage(ctx, &botApi.SendMessageParams{
-		ChatID: payload.Chat.ID,
+		ChatID: payload.Chat.Chat.ID,
 		Text: "created",
 	})
 	if err != nil {
@@ -51,7 +51,7 @@ func (h domainHandlers) onChatCreatedEvent(ctx context.Context, event ddd.Event)
 func (h domainHandlers) onChatDeletedEvent(ctx context.Context, event ddd.Event) error {
 	payload := event.Payload().(*domain.ChatDeleted)
 
-	h.logger.Infow("chat deleted", "id", payload.Chat.ID)
+	h.logger.Infow("chat deleted", "id", payload.Chat.Chat.ID)
 
 	return nil
 }

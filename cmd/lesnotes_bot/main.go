@@ -163,7 +163,7 @@ func (a *app) waitForRPC(ctx context.Context) error {
 
 	group, gCtx := errgroup.WithContext(ctx)
 	group.Go(func() error {
-		a.log.Infof("rpc server started: %s\n", a.cfg.Rpc.Address())
+		a.log.Infof("rpc server started: %s", a.cfg.Rpc.Address())
 		defer a.log.Infoln("rpc server shutdown")
 		if err := a.RPC().Serve(listener); err != nil && err != grpc.ErrServerStopped {
 			return err
